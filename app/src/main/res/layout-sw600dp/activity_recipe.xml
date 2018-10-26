@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+
+    <FrameLayout
+        android:id="@+id/recipe_details_container"
+        android:layout_width="400dp"
+        android:layout_height="match_parent" />
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="match_parent"
+        android:background="?android:attr/listDivider" />
+
+    <android.support.design.widget.CoordinatorLayout
+        android:id="@+id/steps_container"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/fragment_steps_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/btn_prev"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="start|bottom"
+            android:layout_margin="@dimen/floating_button_layout_margin"
+            android:src="@drawable/ic_arrow_left_white_24dp"
+            app:fabSize="auto"
+            app:layout_anchorGravity="left|bottom" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/btn_next"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="@dimen/floating_button_layout_margin"
+            android:src="@drawable/ic_arrow_right_white_24dp"
+            app:fabSize="auto"
+            app:layout_anchorGravity="right|bottom" />
+    </android.support.design.widget.CoordinatorLayout>
+</LinearLayout>
