@@ -78,13 +78,6 @@ public class RecipeDetailsFragment extends Fragment {
 
         ButterKnife.bind(this, view);
 
-        return view;
-    }
-
-    @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
         if (getArguments() != null) {
 
             Recipes recipes = getArguments().getParcelable(EXTRA_RECIPE);
@@ -108,6 +101,8 @@ public class RecipeDetailsFragment extends Fragment {
                 setupStepsList(recipes.getSteps());
             }
         }
+
+        return view;
     }
 
     /**
@@ -116,7 +111,7 @@ public class RecipeDetailsFragment extends Fragment {
      * @param ingredientsList required IngredientsList
      */
     private void setupIngredientsList(List<Ingredients> ingredientsList) {
-        IngredientsRecyclerViewAdapter mIngredientsAdapter = new IngredientsRecyclerViewAdapter(getContext());
+        IngredientsRecyclerViewAdapter mIngredientsAdapter = new IngredientsRecyclerViewAdapter(getActivity());
         LinearLayoutManager mLayoutManager = new LinearLayoutManager(getContext());
         mIngredientsAdapter.setIngredientsList(ingredientsList);
         ingredientsRecyclerView.setAdapter(mIngredientsAdapter);
