@@ -91,7 +91,7 @@ public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFr
                     RecipeDetailsFragment fragment = RecipeDetailsFragment.newInstance(recipes);
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .add(R.id.recipe_details_container, fragment)
+                            .replace(R.id.recipe_details_container, fragment)
                             .commit();
                 }
             }
