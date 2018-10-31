@@ -39,6 +39,9 @@ import com.google.android.exoplayer2.util.Util;
 
 import timber.log.Timber;
 
+import static android.view.View.GONE;
+import static android.view.View.VISIBLE;
+
 
 public class StepsFragment extends Fragment implements Player.EventListener {
 
@@ -55,9 +58,9 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     private Guideline horizontalHalf;
 
     private SimpleExoPlayer mPlayer;
-    private MediaSource mMediaSource;
 
     private String videoUrl;
+    private boolean urlIsEmpty;
     private long playbackPosition;
     private int currentWindow;
     private boolean playWhenReady = true;
@@ -103,61 +106,21 @@ public class StepsFragment extends Fragment implements Player.EventListener {
             descTextView.setText(desc);
 
             videoUrl = getArguments().getString(EXTRA_VIDEO_URL);
-            if (videoUrl != null && !videoUrl.isEmpty()) {
-                playerView.setVisibility(View.VISIBLE);
-                horizontalHalf.setVisibility(View.VISIBLE);
-                loading.setVisibility(View.VISIBLE);
-                initializePlayer();
-            } else {
-                playerView.setVisibility(View.GONE);
-                horizontalHalf.setVisibility(View.GONE);
-                loading.setVisibility(View.GONE);
-            }
+            urlIsEmpty = videoUrl != null && !videoUrl.isEmpty();
+            showVideo(urlIsEmpty);
         }
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-
-        int orientation = getResources().getConfiguration().orientation;
-
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            hideSystemUi();
-        }
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        if (Util.SDK_INT > 23) {
-            if (videoUrl != null && !videoUrl.isEmpty()) {
-                playerView.setVisibility(View.VISIBLE);
-                horizontalHalf.setVisibility(View.VISIBLE);
-                loading.setVisibility(View.VISIBLE);
-                initializePlayer();
-            } else {
-                playerView.setVisibility(View.GONE);
-                horizontalHalf.setVisibility(View.GONE);
-                loading.setVisibility(View.GONE);
-            }
-        }
+        hideSystemUi();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        hideSystemUi();
-        if (videoUrl != null && !videoUrl.isEmpty()) {
-            playerView.setVisibility(View.VISIBLE);
-            horizontalHalf.setVisibility(View.VISIBLE);
-            loading.setVisibility(View.VISIBLE);
-            initializePlayer();
-        } else {
-            playerView.setVisibility(View.GONE);
-            horizontalHalf.setVisibility(View.GONE);
-            loading.setVisibility(View.GONE);
-        }
+        showVideo(urlIsEmpty);
     }
 
     @Override
@@ -207,12 +170,25 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
         String userAgent = Util.getUserAgent(mContext, mContext.getPackageName());
 
-        mMediaSource = new ExtractorMediaSource.Factory(new DefaultHttpDataSourceFactory(userAgent))
+        MediaSource mMediaSource = new ExtractorMediaSource.Factory(new DefaultHttpDataSourceFactory(userAgent))
                 .createMediaSource(uri);
 
 
         mPlayer.prepare(mMediaSource, true, false);
         mPlayer.addListener(this);
+    }
+
+    private void showVideo(boolean isVideoUrlEmpty) {
+        if (isVideoUrlEmpty) {
+            playerView.setVisibility(VISIBLE);
+            horizontalHalf.setVisibility(VISIBLE);
+            loading.setVisibility(VISIBLE);
+            initializePlayer();
+        } else {
+            playerView.setVisibility(GONE);
+            loading.setVisibility(GONE);
+            horizontalHalf.setVisibility(GONE);
+        }
     }
 
     @Override
@@ -232,28 +208,17 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
     @Override
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-        String stateString;
-        switch (playbackState) {
-            case Player.STATE_IDLE:
-                stateString = "ExoPlayer.STATE_IDLE      -";
-                loading.setVisibility(View.VISIBLE);
-                break;
-            case Player.STATE_BUFFERING:
-                stateString = "ExoPlayer.STATE_BUFFERING -";
-                loading.setVisibility(View.VISIBLE);
-                break;
-            case Player.STATE_READY:
-                stateString = "ExoPlayer.STATE_READY     -";
-                loading.setVisibility(View.GONE);
-                break;
-            case Player.STATE_ENDED:
-                stateString = "ExoPlayer.STATE_ENDED     -";
-                break;
-            default:
-                stateString = "UNKNOWN_STATE             -";
-                break;
+        if (Player.STATE_IDLE == playbackState) {
+            loading.setVisibility(GONE);
+        } else if (Player.STATE_BUFFERING == playbackState) {
+            loading.setVisibility(VISIBLE);
+        } else if (Player.STATE_READY == playbackState && playWhenReady) {
+            loading.setVisibility(GONE);
+        } else if (Player.STATE_READY == playbackState) {
+            loading.setVisibility(GONE);
+        } else if (Player.STATE_ENDED == playbackState) {
+            loading.setVisibility(GONE);
         }
-        Timber.d("changed state to %s playWhenReady: %s", stateString, playWhenReady);
     }
 
     @Override
@@ -283,8 +248,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
     @Override
     public void onSeekProcessed() {
-        mPlayer.seekTo(currentWindow, playbackPosition);
-        mPlayer.prepare(mMediaSource, true, false);
     }
 
     private void releasePlayer() {
@@ -298,13 +261,37 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         }
     }
 
-    @SuppressLint("InlinedApi")
     private void hideSystemUi() {
-        playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+        int orientation = getResources().getConfiguration().orientation;
+        int width = playerView.getWidth();
+        int height = playerView.getHeight();
+        if (urlIsEmpty) {
+            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+                playerView.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
+                playerView.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
+
+                playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
+                shortDescTextView.setVisibility(GONE);
+                descTextView.setVisibility(GONE);
+                horizontalHalf.setVisibility(GONE);
+
+            } else {
+                playerView.getLayoutParams().height = height;
+                playerView.getLayoutParams().width = width;
+
+                playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE |
+                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+
+                shortDescTextView.setVisibility(VISIBLE);
+                descTextView.setVisibility(VISIBLE);
+                horizontalHalf.setVisibility(VISIBLE);
+            }
+        }
     }
 }
