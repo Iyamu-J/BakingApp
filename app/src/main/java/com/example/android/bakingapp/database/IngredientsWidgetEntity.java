@@ -15,7 +15,7 @@ public class IngredientsWidgetEntity {
     private int id;
     private List<Ingredients> ingredientsList;
 
-    public IngredientsWidgetEntity(int id, List<Ingredients> ingredientsList) {
+    IngredientsWidgetEntity(int id, List<Ingredients> ingredientsList) {
         this.id = id;
         this.ingredientsList = ingredientsList;
     }

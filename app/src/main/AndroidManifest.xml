@@ -21,7 +21,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".ui.RecipeActivity"
             android:parentActivityName=".ui.MainActivity" />
@@ -30,17 +29,20 @@
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:parentActivityName=".ui.RecipeActivity" />
 
-        <receiver android:name=".widget.BakingAppWidget">
+        <service android:name=".widget.WidgetService" />
+        <service
+            android:name=".widget.ListWidgetService"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
+
+        <receiver android:name=".widget.BakingAppWidgetProvider">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
 
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/baking_app_widget_info" />
+                android:resource="@xml/baking_app_widget_provider_info" />
         </receiver>
-        <service android:name=".widget.ListWidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS"/>
     </application>
 
 </manifest>

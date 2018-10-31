@@ -11,14 +11,12 @@ import com.example.android.bakingapp.R;
 import com.example.android.bakingapp.database.IngredientsWidgetDatabase;
 import com.example.android.bakingapp.database.IngredientsWidgetEntity;
 import com.example.android.bakingapp.model.Ingredients;
-import com.example.android.bakingapp.utils.AppExecutors;
 
 import java.util.List;
 
 import static com.example.android.bakingapp.ui.MainActivity.KEY_ENTITY_ID;
 
 public class ListWidgetService extends RemoteViewsService {
-
     @Override
     public RemoteViewsFactory onGetViewFactory(Intent intent) {
         return new ListRemoteViewsFactory(this.getApplicationContext());
@@ -26,10 +24,8 @@ public class ListWidgetService extends RemoteViewsService {
 
     class ListRemoteViewsFactory implements RemoteViewsFactory {
 
-
         private Context mContext;
-        private int entityId;
-        private List<IngredientsWidgetEntity> ingredientsWidgetEntityList;
+        private List<Ingredients> ingredientsList;
 
         ListRemoteViewsFactory(Context context) {
             mContext = context;
@@ -37,46 +33,46 @@ public class ListWidgetService extends RemoteViewsService {
 
         @Override
         public void onCreate() {
+
         }
 
         @Override
         public void onDataSetChanged() {
+
             // request for the Id of the last clicked Recipe
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
-            entityId = sharedPreferences.getInt(KEY_ENTITY_ID, 0);
+            int entityId = sharedPreferences.getInt(KEY_ENTITY_ID, 0);
 
             // Make call to Database to load recent IngredientsWidgetEntity
-            AppExecutors.getInstance().getDiskIO().execute(() ->
-                    ingredientsWidgetEntityList = IngredientsWidgetDatabase
-                            .getInstance(mContext)
-                            .ingredientsWidgetDao()
-                            .loadAllIngredients());
+            IngredientsWidgetEntity ingredientsWidgetEntity = IngredientsWidgetDatabase
+                    .getInstance(mContext)
+                    .ingredientsWidgetDao()
+                    .loadIngredientsWidgetEntityById(entityId);
+
+            // save IngredientsList
+            ingredientsList = ingredientsWidgetEntity.getIngredientsList();
         }
 
         @Override
         public void onDestroy() {
-            if (ingredientsWidgetEntityList != null) {
-                ingredientsWidgetEntityList.clear();
-            }
+            if (ingredientsList != null) ingredientsList.clear();
         }
 
         @Override
         public int getCount() {
-            if (ingredientsWidgetEntityList == null) return 0;
-            else return ingredientsWidgetEntityList.get(entityId).getIngredientsList().size();
+            if (ingredientsList == null) return 0;
+            else return ingredientsList.size();
         }
 
         @Override
         public RemoteViews getViewAt(int position) {
-            RemoteViews rv = new RemoteViews(mContext.getPackageName(), R.layout.widget_item);
 
-            // save the IngredientsList to an IngredientsWidgetEntity
-            IngredientsWidgetEntity ingredientsWidgetEntity = ingredientsWidgetEntityList.get(entityId);
-            // use individual Ingredients to populate text view
-            Ingredients ingredients = ingredientsWidgetEntity.getIngredientsList().get(position);
-            rv.setTextViewText(R.id.widget_item, formatIngredientWidgetText(ingredients));
+            // populate view with individual Ingredients
+            RemoteViews remoteViews = new RemoteViews(mContext.getPackageName(), R.layout.widget_list_item);
+            Ingredients ingredients = ingredientsList.get(position);
+            remoteViews.setTextViewText(R.id.appwidget_text, formatIngredientWidgetText(ingredients));
 
-            return rv;
+            return remoteViews;
         }
 
         @Override
@@ -142,4 +138,3 @@ public class ListWidgetService extends RemoteViewsService {
         }
     }
 }
-

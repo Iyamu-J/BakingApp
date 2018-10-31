@@ -4,8 +4,11 @@
     <string name="ingredients">Ingredients</string>
     <string name="steps">Steps</string>
 
-    <string name="extra_recipe">RECIPE_EXTRA</string>
-    <string name="extra_position">POSITION_EXTRA</string>
+    <string name="extra_recipe" translatable="false">RECIPE_EXTRA</string>
+    <string name="extra_position" translatable="false">POSITION_EXTRA</string>
+
+    <string name="key_recipe_name" translatable="false">KEY_RECIPE_NAME</string>
+    <string name="default_value">Recipe</string>
 
     <string name="action_refresh">Refresh</string>
 

@@ -26,6 +26,7 @@ import com.example.android.bakingapp.utils.AppExecutors;
 import com.example.android.bakingapp.utils.RecipeResponse;
 import com.example.android.bakingapp.viewmodel.RecipeViewModel;
 import com.example.android.bakingapp.viewmodel.RecipeViewModelFactory;
+import com.example.android.bakingapp.widget.WidgetService;
 
 import java.util.List;
 
@@ -152,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements RecipeRecyclerAda
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this.getApplicationContext());
         sharedPreferences.edit()
                 .putInt(KEY_ENTITY_ID, recipes.getId())
+                .putString(getString(R.string.key_recipe_name), recipes.getName())
                 .apply();
 
         Intent intent = new Intent(this, RecipeActivity.class);
@@ -174,6 +176,8 @@ public class MainActivity extends AppCompatActivity implements RecipeRecyclerAda
                 Timber.d("Added to Database");
             }
         });
+
+        WidgetService.startActionUpdateWidget(this);
     }
 
     /**
