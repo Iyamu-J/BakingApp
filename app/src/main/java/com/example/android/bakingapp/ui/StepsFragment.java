@@ -1,14 +1,17 @@
 package com.example.android.bakingapp.ui;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.constraint.Guideline;
+import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.NestedScrollView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -16,6 +19,8 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.android.bakingapp.R;
+import com.example.android.bakingapp.model.Recipes;
+import com.example.android.bakingapp.model.Steps;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlaybackException;
@@ -31,12 +36,16 @@ import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
 import timber.log.Timber;
 
 import static android.view.View.GONE;
@@ -45,35 +54,48 @@ import static android.view.View.VISIBLE;
 
 public class StepsFragment extends Fragment implements Player.EventListener {
 
-    private static final String EXTRA_SHORT_DESCRIPTION = "EXTRA_SHORT_DESCRIPTION";
-    private static final String EXTRA_DESCRIPTION = "EXTRA_DESCRIPTION";
-    private static final String EXTRA_VIDEO_URL = "EXTRA_VIDEO_URL";
+    private static final String EXTRA_RECIPE = "EXTRA_RECIPE";
+
+    @BindView(R.id.playerView)
+    PlayerView playerView;
+    @BindView(R.id.tv_short_desc)
+    TextView shortDescTextView;
+    @BindView(R.id.tv_desc)
+    TextView descTextView;
+    @BindView(R.id.progressBar)
+    ProgressBar loading;
+    @BindView(R.id.btn_prev)
+    FloatingActionButton prevButton;
+    @BindView(R.id.btn_next)
+    FloatingActionButton nextButton;
+    @BindView(R.id.nested_scroll_view)
+    NestedScrollView nestedScrollView;
+    @BindView(R.id.constraint_layout)
+    ConstraintLayout constraintLayout;
+    @BindView(R.id.video_constraint_layout)
+    ConstraintLayout videoConstraintLayout;
 
     private Context mContext;
-
-    private PlayerView playerView;
-    private TextView shortDescTextView;
-    private TextView descTextView;
-    private ProgressBar loading;
-    private Guideline horizontalHalf;
-
+    private Unbinder unbinder;
     private SimpleExoPlayer mPlayer;
+    private Recipes recipes;
 
     private String videoUrl;
-    private boolean urlIsEmpty;
+    private boolean videoUrlNotEmpty;
+    private boolean mTwoPane;
+    private boolean playWhenReady = true;
     private long playbackPosition;
     private int currentWindow;
-    private boolean playWhenReady = true;
+    private int stepId;
+    private int stepsListSize;
 
     public StepsFragment() {
         // Required empty public constructor
     }
 
-    public static StepsFragment newInstance(String shortDec, String desc, String videoUrl) {
+    public static StepsFragment newInstance(Recipes recipes) {
         Bundle args = new Bundle();
-        args.putString(EXTRA_SHORT_DESCRIPTION, shortDec);
-        args.putString(EXTRA_DESCRIPTION, desc);
-        args.putString(EXTRA_VIDEO_URL, videoUrl);
+        args.putParcelable(EXTRA_RECIPE, recipes);
         StepsFragment stepsFragment = new StepsFragment();
         stepsFragment.setArguments(args);
         return stepsFragment;
@@ -85,12 +107,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_steps, container, false);
 
-        playerView = view.findViewById(R.id.playerView);
-        shortDescTextView = view.findViewById(R.id.tv_short_desc);
-        descTextView = view.findViewById(R.id.tv_desc);
-        loading = view.findViewById(R.id.progressBar);
-        horizontalHalf = view.findViewById(R.id.horizontalHalf);
-
+        unbinder = ButterKnife.bind(this, view);
         return view;
     }
 
@@ -98,17 +115,29 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mContext = getContext();
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+        stepId = sharedPreferences.getInt(getString(R.string.key_step_id), 0);
+        mTwoPane = sharedPreferences.getBoolean(getString(R.string.key_two_pane), false);
+        makeButtonVisible();
+
         if (getArguments() != null) {
-            String shortDesc = getArguments().getString(EXTRA_SHORT_DESCRIPTION);
-            shortDescTextView.setText(shortDesc);
+            recipes = getArguments().getParcelable(EXTRA_RECIPE);
+            if (recipes != null) {
+                stepsListSize = recipes.getSteps().size();
+                Steps steps = recipes.getSteps().get(stepId);
 
-            String desc = getArguments().getString(EXTRA_DESCRIPTION);
-            descTextView.setText(desc);
+                String shortDesc = steps.getShortDescription();
+                shortDescTextView.setText(shortDesc);
 
-            videoUrl = getArguments().getString(EXTRA_VIDEO_URL);
-            urlIsEmpty = videoUrl != null && !videoUrl.isEmpty();
-            showVideo(urlIsEmpty);
+                String desc = steps.getDescription();
+                descTextView.setText(desc);
+
+                videoUrl = steps.getVideoURL();
+                videoUrlNotEmpty = videoUrl != null && !videoUrl.isEmpty();
+                showVideo(videoUrlNotEmpty);
+            }
         }
+        handleButtonClicks();
     }
 
     @Override
@@ -120,7 +149,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     @Override
     public void onResume() {
         super.onResume();
-        showVideo(urlIsEmpty);
+        showVideo(videoUrlNotEmpty);
     }
 
     @Override
@@ -147,7 +176,13 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         }
     }
 
-    void initializePlayer() {
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
+    }
+
+    private void initializePlayer() {
 
         Uri uri = Uri.parse(videoUrl);
 
@@ -164,6 +199,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                     new DefaultLoadControl());
 
             playerView.setPlayer(mPlayer);
+            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
             mPlayer.setPlayWhenReady(playWhenReady);
             mPlayer.seekTo(currentWindow, playbackPosition);
         }
@@ -178,16 +214,106 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         mPlayer.addListener(this);
     }
 
-    private void showVideo(boolean isVideoUrlEmpty) {
-        if (isVideoUrlEmpty) {
+    private void showVideo(boolean isVideoUrlNotEmpty) {
+        if (isVideoUrlNotEmpty) {
+            videoConstraintLayout.setVisibility(VISIBLE);
             playerView.setVisibility(VISIBLE);
-            horizontalHalf.setVisibility(VISIBLE);
             loading.setVisibility(VISIBLE);
             initializePlayer();
+            hideSystemUi();
         } else {
+            videoConstraintLayout.setVisibility(GONE);
             playerView.setVisibility(GONE);
             loading.setVisibility(GONE);
-            horizontalHalf.setVisibility(GONE);
+        }
+    }
+
+    private void releasePlayer() {
+        if (mPlayer != null) {
+            playbackPosition = mPlayer.getCurrentPosition();
+            playWhenReady = mPlayer.getPlayWhenReady();
+            currentWindow = mPlayer.getCurrentWindowIndex();
+            mPlayer.release();
+            mPlayer.removeListener(this);
+            mPlayer = null;
+        }
+    }
+
+    private void hideSystemUi() {
+        if (!mTwoPane) {
+            int orientation = getResources().getConfiguration().orientation;
+            if (videoUrlNotEmpty) {
+                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+
+                    shortDescTextView.setVisibility(GONE);
+                    descTextView.setVisibility(GONE);
+                    prevButton.setVisibility(GONE);
+                    nextButton.setVisibility(GONE);
+                    nestedScrollView.setVisibility(GONE);
+                    constraintLayout.setVisibility(GONE);
+                    makeButtonVisible();
+                } else {
+
+                    shortDescTextView.setVisibility(VISIBLE);
+                    descTextView.setVisibility(VISIBLE);
+                    prevButton.setVisibility(VISIBLE);
+                    nextButton.setVisibility(VISIBLE);
+                    nestedScrollView.setVisibility(VISIBLE);
+                    constraintLayout.setVisibility(VISIBLE);
+                    makeButtonVisible();
+                }
+            }
+        }
+    }
+
+    private void handleButtonClicks() {
+        makeButtonVisible();
+        if (getFragmentManager() != null) {
+            // handle clicks on the previous button
+            prevButton.setOnClickListener(v -> {
+                if (stepId > 0) {
+                    stepId--;
+                    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+                    sharedPreferences.edit().putInt(getString(R.string.key_step_id), stepId).apply();
+                    StepsFragment fragment = StepsFragment.newInstance(recipes);
+                    getFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.activity_steps_container, fragment)
+                            .commit();
+                }
+                makeButtonVisible();
+            });
+
+            // handle clicks on the next button
+            nextButton.setOnClickListener(v -> {
+                if (stepId < stepsListSize - 1) {
+                    stepId++;
+                    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+                    sharedPreferences.edit().putInt(getString(R.string.key_step_id), stepId).apply();
+                    StepsFragment fragment = StepsFragment.newInstance(recipes);
+                    getFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.activity_steps_container, fragment)
+                            .commit();
+                }
+                makeButtonVisible();
+            });
+        }
+    }
+
+    /**
+     * Shows the either of the Buttons depending on the stepId
+     */
+    private void makeButtonVisible() {
+        if (stepId == 0) {
+            prevButton.setVisibility(View.INVISIBLE);
+        } else {
+            prevButton.setVisibility(View.VISIBLE);
+        }
+        if (stepId == stepsListSize - 1) {
+            nextButton.setVisibility(View.INVISIBLE);
+        } else {
+            nextButton.setVisibility(View.VISIBLE);
         }
     }
 
@@ -248,50 +374,5 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
     @Override
     public void onSeekProcessed() {
-    }
-
-    private void releasePlayer() {
-        if (mPlayer != null) {
-            playbackPosition = mPlayer.getCurrentPosition();
-            playWhenReady = mPlayer.getPlayWhenReady();
-            currentWindow = mPlayer.getCurrentWindowIndex();
-            mPlayer.release();
-            mPlayer.removeListener(this);
-            mPlayer = null;
-        }
-    }
-
-    private void hideSystemUi() {
-        int orientation = getResources().getConfiguration().orientation;
-        int width = playerView.getWidth();
-        int height = playerView.getHeight();
-        if (urlIsEmpty) {
-            if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                playerView.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
-                playerView.getLayoutParams().height = ViewGroup.LayoutParams.MATCH_PARENT;
-
-                playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-
-                shortDescTextView.setVisibility(GONE);
-                descTextView.setVisibility(GONE);
-                horizontalHalf.setVisibility(GONE);
-
-            } else {
-                playerView.getLayoutParams().height = height;
-                playerView.getLayoutParams().width = width;
-
-                playerView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_VISIBLE |
-                        View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
-
-                shortDescTextView.setVisibility(VISIBLE);
-                descTextView.setVisibility(VISIBLE);
-                horizontalHalf.setVisibility(VISIBLE);
-            }
-        }
     }
 }

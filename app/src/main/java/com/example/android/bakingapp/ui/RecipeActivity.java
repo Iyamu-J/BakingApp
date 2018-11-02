@@ -1,7 +1,9 @@
 package com.example.android.bakingapp.ui;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
@@ -9,7 +11,6 @@ import android.view.View;
 
 import com.example.android.bakingapp.R;
 import com.example.android.bakingapp.model.Recipes;
-import com.example.android.bakingapp.model.Steps;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -17,8 +18,6 @@ import butterknife.ButterKnife;
 public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFragment.OnStepClickListener {
 
     private boolean mTwoPane;
-    private int selectedStepPosition;
-
     private Recipes recipes;
 
     @BindView(R.id.btn_prev)
@@ -33,6 +32,10 @@ public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFr
 
         View stepsContainer = findViewById(R.id.steps_container);
         mTwoPane = stepsContainer != null && stepsContainer.getVisibility() == View.VISIBLE;
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        sharedPreferences.edit()
+                .putBoolean(getString(R.string.key_two_pane), mTwoPane)
+                .apply();
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
@@ -42,50 +45,17 @@ public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFr
                 if (mTwoPane) {
                     ButterKnife.bind(this);
 
-                    int stepsSize = recipes.getSteps().size();
-
-                    Steps clickedStep = recipes.getSteps().get(selectedStepPosition);
-                    StepsFragment fragment = StepsFragment.newInstance(
-                            clickedStep.getShortDescription(),
-                            clickedStep.getDescription(),
-                            clickedStep.getVideoURL());
+                    RecipeDetailsFragment recipeDetailsFragment = RecipeDetailsFragment.newInstance(recipes);
                     getSupportFragmentManager()
                             .beginTransaction()
-                            .add(R.id.fragment_steps_container, fragment)
+                            .replace(R.id.recipe_details_container, recipeDetailsFragment)
                             .commit();
-                    makeButtonVisible();
 
-                    prevButton.setOnClickListener(v -> {
-                        if (selectedStepPosition > 0) {
-                            selectedStepPosition--;
-                            Steps prevClickedStep = recipes.getSteps().get(selectedStepPosition);
-                            StepsFragment prevFragment = StepsFragment.newInstance(
-                                    prevClickedStep.getShortDescription(),
-                                    prevClickedStep.getDescription(),
-                                    prevClickedStep.getVideoURL());
-                            getSupportFragmentManager()
-                                    .beginTransaction()
-                                    .replace(R.id.fragment_steps_container, prevFragment)
-                                    .commit();
-                        }
-                        makeButtonVisible();
-                    });
-
-                    nextButton.setOnClickListener(v -> {
-                        if (selectedStepPosition < stepsSize - 1) {
-                            selectedStepPosition++;
-                            Steps nextClickedStep = recipes.getSteps().get(selectedStepPosition);
-                            StepsFragment nextFragment = StepsFragment.newInstance(
-                                    nextClickedStep.getShortDescription(),
-                                    nextClickedStep.getDescription(),
-                                    nextClickedStep.getVideoURL());
-                            getSupportFragmentManager()
-                                    .beginTransaction()
-                                    .replace(R.id.fragment_steps_container, nextFragment)
-                                    .commit();
-                        }
-                        makeButtonVisible();
-                    });
+                    StepsFragment stepsFragment = StepsFragment.newInstance(recipes);
+                    getSupportFragmentManager()
+                            .beginTransaction()
+                            .add(R.id.fragment_steps_container, stepsFragment)
+                            .commit();
 
                 } else {
                     RecipeDetailsFragment fragment = RecipeDetailsFragment.newInstance(recipes);
@@ -109,36 +79,17 @@ public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFr
 
     @Override
     public void onStepSelected(int position) {
-        selectedStepPosition = position;
         if (mTwoPane) {
-            Steps clickedStep = recipes.getSteps().get(selectedStepPosition);
-            StepsFragment fragment = StepsFragment.newInstance(
-                    clickedStep.getShortDescription(),
-                    clickedStep.getDescription(),
-                    clickedStep.getVideoURL());
+            StepsFragment fragment = StepsFragment.newInstance(recipes);
             getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_steps_container, fragment)
                     .commit();
-            makeButtonVisible();
         } else {
             Intent intent = new Intent(this, StepsActivity.class);
             intent.putExtra(getString(R.string.extra_position), position);
             intent.putExtra(getString(R.string.extra_recipe), recipes);
             startActivity(intent);
-        }
-    }
-
-    private void makeButtonVisible() {
-        if (selectedStepPosition == 0) {
-            prevButton.setVisibility(View.INVISIBLE);
-        } else {
-            prevButton.setVisibility(View.VISIBLE);
-        }
-        if (selectedStepPosition == recipes.getSteps().size() - 1) {
-            nextButton.setVisibility(View.INVISIBLE);
-        } else {
-            nextButton.setVisibility(View.VISIBLE);
         }
     }
 }

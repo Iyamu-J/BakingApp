@@ -44,7 +44,7 @@ public class BakingAppWidgetProvider extends AppWidgetProvider {
         // handle empty view
         views.setEmptyView(R.id.widget_list_view, R.id.appwidget_empty_view);
 
-        views.setOnClickPendingIntent(R.id.appwidget_text, pendingIntent);
+        views.setOnClickPendingIntent(R.id.appwidget_recipe_name, pendingIntent);
 
         // Instruct the widget manager to update the widget
         appWidgetManager.updateAppWidget(appWidgetId, views);
