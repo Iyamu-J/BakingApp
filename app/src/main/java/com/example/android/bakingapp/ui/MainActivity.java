@@ -161,6 +161,9 @@ public class MainActivity extends AppCompatActivity implements RecipeRecyclerAda
         extras.putParcelable(getString(R.string.extra_recipe), recipes);
         intent.putExtras(extras);
         startActivity(intent);
+
+        // sets the widget to Ingredients list of last clicked recipe
+        WidgetService.startActionUpdateWidget(this);
     }
 
     private void addIngredientsForWidget(List<Recipes> recipesList) {
