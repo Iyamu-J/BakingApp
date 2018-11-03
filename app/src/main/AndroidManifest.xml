@@ -26,7 +26,6 @@
             android:parentActivityName=".ui.MainActivity" />
         <activity
             android:name=".ui.StepsActivity"
-            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|smallestScreenSize|uiMode"
             android:parentActivityName=".ui.RecipeActivity" />
 
         <service android:name=".widget.WidgetService" />

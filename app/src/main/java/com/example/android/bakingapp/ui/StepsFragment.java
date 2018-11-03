@@ -2,7 +2,6 @@ package com.example.android.bakingapp.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -11,7 +10,6 @@ import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.NestedScrollView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +53,9 @@ import static android.view.View.VISIBLE;
 public class StepsFragment extends Fragment implements Player.EventListener {
 
     private static final String EXTRA_RECIPE = "EXTRA_RECIPE";
+    private static final String PLAYBACK_POSITION = "PLAYBACK_POSITION";
+    private static final String PLAYER_STATE = "PLAYER_STATE";
+    private static final String CURRENT_WINDOW = "CURRENT_WINDOW";
 
     @BindView(R.id.playerView)
     PlayerView playerView;
@@ -68,10 +69,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     FloatingActionButton prevButton;
     @BindView(R.id.btn_next)
     FloatingActionButton nextButton;
-    @BindView(R.id.nested_scroll_view)
-    NestedScrollView nestedScrollView;
-    @BindView(R.id.constraint_layout)
-    ConstraintLayout constraintLayout;
     @BindView(R.id.video_constraint_layout)
     ConstraintLayout videoConstraintLayout;
 
@@ -82,7 +79,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
     private String videoUrl;
     private boolean videoUrlNotEmpty;
-    private boolean mTwoPane;
     private boolean playWhenReady = true;
     private long playbackPosition;
     private int currentWindow;
@@ -101,6 +97,13 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         return stepsFragment;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setRetainInstance(true);
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -117,7 +120,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         mContext = getContext();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
         stepId = sharedPreferences.getInt(getString(R.string.key_step_id), 0);
-        mTwoPane = sharedPreferences.getBoolean(getString(R.string.key_two_pane), false);
         makeButtonVisible();
 
         if (getArguments() != null) {
@@ -141,9 +143,26 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-        hideSystemUi();
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        currentWindow = mPlayer.getCurrentWindowIndex();
+        playbackPosition = mPlayer.getCurrentPosition();
+        playWhenReady = mPlayer.getPlayWhenReady();
+        outState.putBoolean(PLAYER_STATE, playWhenReady);
+        outState.putLong(PLAYBACK_POSITION, playbackPosition);
+        outState.putInt(CURRENT_WINDOW, currentWindow);
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            playbackPosition = savedInstanceState.getLong(PLAYBACK_POSITION);
+            playWhenReady = savedInstanceState.getBoolean(PLAYER_STATE);
+            currentWindow = savedInstanceState.getInt(CURRENT_WINDOW);
+        }
     }
 
     @Override
@@ -163,14 +182,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     @Override
     public void onStop() {
         super.onStop();
-        if (Util.SDK_INT > 23) {
-            releasePlayer();
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
         if (Util.SDK_INT > 23) {
             releasePlayer();
         }
@@ -220,7 +231,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
             playerView.setVisibility(VISIBLE);
             loading.setVisibility(VISIBLE);
             initializePlayer();
-            hideSystemUi();
         } else {
             videoConstraintLayout.setVisibility(GONE);
             playerView.setVisibility(GONE);
@@ -236,33 +246,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
             mPlayer.release();
             mPlayer.removeListener(this);
             mPlayer = null;
-        }
-    }
-
-    private void hideSystemUi() {
-        if (!mTwoPane) {
-            int orientation = getResources().getConfiguration().orientation;
-            if (videoUrlNotEmpty) {
-                if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-
-                    shortDescTextView.setVisibility(GONE);
-                    descTextView.setVisibility(GONE);
-                    prevButton.setVisibility(GONE);
-                    nextButton.setVisibility(GONE);
-                    nestedScrollView.setVisibility(GONE);
-                    constraintLayout.setVisibility(GONE);
-                    makeButtonVisible();
-                } else {
-
-                    shortDescTextView.setVisibility(VISIBLE);
-                    descTextView.setVisibility(VISIBLE);
-                    prevButton.setVisibility(VISIBLE);
-                    nextButton.setVisibility(VISIBLE);
-                    nestedScrollView.setVisibility(VISIBLE);
-                    constraintLayout.setVisibility(VISIBLE);
-                    makeButtonVisible();
-                }
-            }
         }
     }
 
