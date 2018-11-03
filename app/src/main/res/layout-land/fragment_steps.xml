@@ -43,14 +43,14 @@
         android:layout_marginTop="16dp"
         android:textAlignment="center"
         android:textSize="24sp"
-        android:visibility="visible"
+        android:visibility="gone"
         tools:text="@tools:sample/full_names" />
 
     <android.support.v4.widget.NestedScrollView
         android:id="@+id/nested_scroll_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <TextView
             android:id="@+id/tv_desc"
@@ -61,7 +61,7 @@
             android:paddingStart="@dimen/fragment_steps_text_view_padding_start"
             android:paddingEnd="@dimen/fragment_steps_text_view_padding_end"
             android:textSize="18sp"
-            android:visibility="visible" />
+            android:visibility="gone" />
 
     </android.support.v4.widget.NestedScrollView>
 
@@ -73,7 +73,7 @@
         android:layout_marginTop="4dp"
         android:layout_weight="4"
         android:orientation="horizontal"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/btn_prev"
@@ -81,7 +81,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/floating_button_layout_margin"
             android:src="@drawable/ic_arrow_left_white_24dp"
-            android:visibility="visible"
+            android:visibility="gone"
             app:fabSize="auto"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent" />
@@ -92,7 +92,7 @@
             android:layout_height="wrap_content"
             android:layout_margin="@dimen/floating_button_layout_margin"
             android:src="@drawable/ic_arrow_right_white_24dp"
-            android:visibility="visible"
+            android:visibility="gone"
             app:fabSize="auto"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
