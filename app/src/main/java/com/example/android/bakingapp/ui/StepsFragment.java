@@ -2,6 +2,7 @@ package com.example.android.bakingapp.ui;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -10,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.NestedScrollView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -69,6 +71,10 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     FloatingActionButton prevButton;
     @BindView(R.id.btn_next)
     FloatingActionButton nextButton;
+    @BindView(R.id.nested_scroll_view)
+    NestedScrollView nestedScrollView;
+    @BindView(R.id.constraint_layout)
+    ConstraintLayout constraintLayout;
     @BindView(R.id.video_constraint_layout)
     ConstraintLayout videoConstraintLayout;
 
@@ -79,6 +85,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
 
     private String videoUrl;
     private boolean videoUrlNotEmpty;
+    private boolean mTwoPane;
     private boolean playWhenReady = true;
     private long playbackPosition;
     private int currentWindow;
@@ -120,13 +127,19 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         mContext = getContext();
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
         stepId = sharedPreferences.getInt(getString(R.string.key_step_id), 0);
-        makeButtonVisible();
+        mTwoPane = sharedPreferences.getBoolean(getString(R.string.key_two_pane), false);
 
         if (getArguments() != null) {
             recipes = getArguments().getParcelable(EXTRA_RECIPE);
             if (recipes != null) {
                 stepsListSize = recipes.getSteps().size();
                 Steps steps = recipes.getSteps().get(stepId);
+
+
+                nestedScrollView.setVisibility(VISIBLE);
+                constraintLayout.setVisibility(VISIBLE);
+                shortDescTextView.setVisibility(VISIBLE);
+                descTextView.setVisibility(VISIBLE);
 
                 String shortDesc = steps.getShortDescription();
                 shortDescTextView.setText(shortDesc);
@@ -139,6 +152,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                 showVideo(videoUrlNotEmpty);
             }
         }
+        makeButtonVisible();
         handleButtonClicks();
     }
 
@@ -231,6 +245,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
             playerView.setVisibility(VISIBLE);
             loading.setVisibility(VISIBLE);
             initializePlayer();
+            hideSystemUi();
         } else {
             videoConstraintLayout.setVisibility(GONE);
             playerView.setVisibility(GONE);
@@ -246,6 +261,19 @@ public class StepsFragment extends Fragment implements Player.EventListener {
             mPlayer.release();
             mPlayer.removeListener(this);
             mPlayer = null;
+        }
+    }
+
+    private void hideSystemUi() {
+        int orientation = getResources().getConfiguration().orientation;
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE && !mTwoPane) {
+
+            shortDescTextView.setVisibility(GONE);
+            descTextView.setVisibility(GONE);
+            prevButton.setVisibility(GONE);
+            nextButton.setVisibility(GONE);
+            nestedScrollView.setVisibility(GONE);
+            constraintLayout.setVisibility(GONE);
         }
     }
 
@@ -319,13 +347,15 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
         if (Player.STATE_IDLE == playbackState) {
             loading.setVisibility(GONE);
-        } else if (Player.STATE_BUFFERING == playbackState) {
+        } else if (Player.STATE_BUFFERING == playbackState && playWhenReady) {
             loading.setVisibility(VISIBLE);
         } else if (Player.STATE_READY == playbackState && playWhenReady) {
             loading.setVisibility(GONE);
         } else if (Player.STATE_READY == playbackState) {
             loading.setVisibility(GONE);
         } else if (Player.STATE_ENDED == playbackState) {
+            loading.setVisibility(GONE);
+        } else if (!playWhenReady) {
             loading.setVisibility(GONE);
         }
     }

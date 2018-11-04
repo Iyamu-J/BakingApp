@@ -4,6 +4,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
@@ -11,8 +12,12 @@ import com.example.android.bakingapp.R;
 import com.example.android.bakingapp.model.Recipes;
 
 import butterknife.ButterKnife;
+import timber.log.Timber;
 
 public class StepsActivity extends AppCompatActivity {
+
+    private StepsFragment stepsFragment;
+    private static final String TAG_STEPS_FRAGMENT = "TAG_STEPS_FRAGMENT";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -34,12 +39,18 @@ public class StepsActivity extends AppCompatActivity {
 
                 setTitle(recipes.getName());
 
-                StepsFragment fragment = StepsFragment.newInstance(recipes);
-
-                getSupportFragmentManager()
-                        .beginTransaction()
-                        .add(R.id.activity_steps_container, fragment)
-                        .commit();
+                FragmentManager fm = getSupportFragmentManager();
+                stepsFragment = (StepsFragment) fm.findFragmentByTag(TAG_STEPS_FRAGMENT);
+                if (stepsFragment == null) {
+                    stepsFragment = StepsFragment.newInstance(recipes);
+                    Timber.d("Fragment is null");
+                    if (!stepsFragment.isInLayout()) {
+                        Timber.d("");
+                        fm.beginTransaction()
+                                .replace(R.id.activity_steps_container, stepsFragment, TAG_STEPS_FRAGMENT)
+                                .commit();
+                    }
+                }
             }
         }
 
