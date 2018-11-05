@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,20 +18,18 @@ import butterknife.ButterKnife;
 
 public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFragment.OnStepClickListener {
 
+    private static final String TAG_STEPS_FRAGMENT = "TAG_STEPS_FRAGMENT";
     private boolean mTwoPane;
     private Recipes recipes;
 
-    @BindView(R.id.btn_prev)
-    FloatingActionButton prevButton;
-    @BindView(R.id.btn_next)
-    FloatingActionButton nextButton;
+    private StepsFragment stepsFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recipe);
 
-        View stepsContainer = findViewById(R.id.steps_container);
+        View stepsContainer = findViewById(R.id.fragment_steps_container);
         mTwoPane = stepsContainer != null && stepsContainer.getVisibility() == View.VISIBLE;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         sharedPreferences.edit()
@@ -45,17 +44,22 @@ public class RecipeActivity extends AppCompatActivity implements RecipeDetailsFr
                 if (mTwoPane) {
                     ButterKnife.bind(this);
 
+                    FragmentManager fm = getSupportFragmentManager();
+
                     RecipeDetailsFragment recipeDetailsFragment = RecipeDetailsFragment.newInstance(recipes);
-                    getSupportFragmentManager()
-                            .beginTransaction()
+                    fm.beginTransaction()
                             .replace(R.id.recipe_details_container, recipeDetailsFragment)
                             .commit();
 
-                    StepsFragment stepsFragment = StepsFragment.newInstance(recipes);
-                    getSupportFragmentManager()
-                            .beginTransaction()
-                            .add(R.id.fragment_steps_container, stepsFragment)
-                            .commit();
+                    stepsFragment = (StepsFragment) fm.findFragmentByTag(TAG_STEPS_FRAGMENT);
+                    if (stepsFragment == null) {
+                        stepsFragment = StepsFragment.newInstance(recipes);
+                        if (!stepsFragment.isInLayout()) {
+                            fm.beginTransaction()
+                                    .add(R.id.fragment_steps_container, stepsFragment, TAG_STEPS_FRAGMENT)
+                                    .commit();
+                        }
+                    }
 
                 } else {
                     RecipeDetailsFragment fragment = RecipeDetailsFragment.newInstance(recipes);

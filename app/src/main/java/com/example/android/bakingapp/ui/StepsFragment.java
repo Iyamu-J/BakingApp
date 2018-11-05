@@ -88,7 +88,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     private boolean mTwoPane;
     private boolean playWhenReady = true;
     private long playbackPosition;
-    private int currentWindow;
     private int stepId;
     private int stepsListSize;
 
@@ -160,12 +159,10 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        currentWindow = mPlayer.getCurrentWindowIndex();
         playbackPosition = mPlayer.getCurrentPosition();
         playWhenReady = mPlayer.getPlayWhenReady();
         outState.putBoolean(PLAYER_STATE, playWhenReady);
         outState.putLong(PLAYBACK_POSITION, playbackPosition);
-        outState.putInt(CURRENT_WINDOW, currentWindow);
     }
 
     @Override
@@ -175,7 +172,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         if (savedInstanceState != null) {
             playbackPosition = savedInstanceState.getLong(PLAYBACK_POSITION);
             playWhenReady = savedInstanceState.getBoolean(PLAYER_STATE);
-            currentWindow = savedInstanceState.getInt(CURRENT_WINDOW);
+            mPlayer.seekTo(playbackPosition);
         }
     }
 
@@ -222,12 +219,12 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                     new DefaultRenderersFactory(mContext),
                     new DefaultTrackSelector(adaptiveTrackSelectionFactory),
                     new DefaultLoadControl());
-
-            playerView.setPlayer(mPlayer);
-            playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
-            mPlayer.setPlayWhenReady(playWhenReady);
-            mPlayer.seekTo(currentWindow, playbackPosition);
         }
+
+        playerView.setPlayer(mPlayer);
+        playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FILL);
+        mPlayer.setPlayWhenReady(playWhenReady);
+        mPlayer.seekTo(playbackPosition);
 
         String userAgent = Util.getUserAgent(mContext, mContext.getPackageName());
 
@@ -257,7 +254,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         if (mPlayer != null) {
             playbackPosition = mPlayer.getCurrentPosition();
             playWhenReady = mPlayer.getPlayWhenReady();
-            currentWindow = mPlayer.getCurrentWindowIndex();
             mPlayer.release();
             mPlayer.removeListener(this);
             mPlayer = null;

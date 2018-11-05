@@ -43,11 +43,9 @@ public class StepsActivity extends AppCompatActivity {
                 stepsFragment = (StepsFragment) fm.findFragmentByTag(TAG_STEPS_FRAGMENT);
                 if (stepsFragment == null) {
                     stepsFragment = StepsFragment.newInstance(recipes);
-                    Timber.d("Fragment is null");
                     if (!stepsFragment.isInLayout()) {
-                        Timber.d("");
                         fm.beginTransaction()
-                                .replace(R.id.activity_steps_container, stepsFragment, TAG_STEPS_FRAGMENT)
+                                .add(R.id.activity_steps_container, stepsFragment, TAG_STEPS_FRAGMENT)
                                 .commit();
                     }
                 }
