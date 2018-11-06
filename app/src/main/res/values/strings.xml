@@ -6,6 +6,7 @@
 
     <string name="extra_recipe" translatable="false">RECIPE_EXTRA</string>
     <string name="extra_position" translatable="false">POSITION_EXTRA</string>
+    <string name="extra_step_id" translatable="false">EXTRA_STEP_ID</string>
 
     <string name="key_recipe_name" translatable="false">KEY_RECIPE_NAME</string>
     <string name="key_step_id" translatable="false">KEY_STEP_ID</string>
@@ -16,4 +17,5 @@
 
     <string name="error_message">Something went wrong. Please try again</string>
     <string name="no_connection_message">No internet connection. \nPlease connect to the internet and try again</string>
+    <string name="tag_steps_fragment">TAG_STEPS_FRAGMENT</string>
 </resources>

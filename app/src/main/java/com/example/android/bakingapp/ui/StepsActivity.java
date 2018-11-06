@@ -16,8 +16,7 @@ import timber.log.Timber;
 
 public class StepsActivity extends AppCompatActivity {
 
-    private StepsFragment stepsFragment;
-    private static final String TAG_STEPS_FRAGMENT = "TAG_STEPS_FRAGMENT";
+    private int stepId;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -28,7 +27,11 @@ public class StepsActivity extends AppCompatActivity {
 
         if (getIntent() != null) {
             Recipes recipes = getIntent().getParcelableExtra(getString(R.string.extra_recipe));
-            int stepId = getIntent().getIntExtra(getString(R.string.extra_position), 0);
+            if (savedInstanceState == null) {
+                stepId = getIntent().getIntExtra(getString(R.string.extra_position), 0);
+            } else {
+                stepId = savedInstanceState.getInt(getString(R.string.extra_step_id));
+            }
 
             SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
             sharedPreferences.edit()
@@ -40,19 +43,15 @@ public class StepsActivity extends AppCompatActivity {
                 setTitle(recipes.getName());
 
                 FragmentManager fm = getSupportFragmentManager();
-                stepsFragment = (StepsFragment) fm.findFragmentByTag(TAG_STEPS_FRAGMENT);
+                StepsFragment stepsFragment = (StepsFragment) fm.findFragmentByTag(getString(R.string.tag_steps_fragment));
                 if (stepsFragment == null) {
                     stepsFragment = StepsFragment.newInstance(recipes);
-                    if (!stepsFragment.isInLayout()) {
-                        fm.beginTransaction()
-                                .add(R.id.activity_steps_container, stepsFragment, TAG_STEPS_FRAGMENT)
-                                .commit();
-                    }
+                    fm.beginTransaction()
+                            .add(R.id.activity_steps_container, stepsFragment, getString(R.string.tag_steps_fragment))
+                            .commit();
                 }
             }
         }
-
-
     }
 
     @Override
@@ -62,5 +61,13 @@ public class StepsActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        stepId = sharedPreferences.getInt(getString(R.string.key_step_id), 0);
+        outState.putInt(getString(R.string.extra_step_id), stepId);
     }
 }

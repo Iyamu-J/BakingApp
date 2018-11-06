@@ -12,6 +12,7 @@ import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.NestedScrollView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,7 +58,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     private static final String EXTRA_RECIPE = "EXTRA_RECIPE";
     private static final String PLAYBACK_POSITION = "PLAYBACK_POSITION";
     private static final String PLAYER_STATE = "PLAYER_STATE";
-    private static final String CURRENT_WINDOW = "CURRENT_WINDOW";
 
     @BindView(R.id.playerView)
     PlayerView playerView;
@@ -147,7 +147,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                 descTextView.setText(desc);
 
                 videoUrl = steps.getVideoURL();
-                videoUrlNotEmpty = videoUrl != null && !videoUrl.isEmpty();
+                videoUrlNotEmpty = TextUtils.isEmpty(videoUrl);
                 showVideo(videoUrlNotEmpty);
             }
         }
@@ -159,10 +159,12 @@ public class StepsFragment extends Fragment implements Player.EventListener {
     public void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
 
-        playbackPosition = mPlayer.getCurrentPosition();
-        playWhenReady = mPlayer.getPlayWhenReady();
-        outState.putBoolean(PLAYER_STATE, playWhenReady);
-        outState.putLong(PLAYBACK_POSITION, playbackPosition);
+        if (mPlayer != null) {
+            playbackPosition = mPlayer.getCurrentPosition();
+            playWhenReady = mPlayer.getPlayWhenReady();
+            outState.putBoolean(PLAYER_STATE, playWhenReady);
+            outState.putLong(PLAYBACK_POSITION, playbackPosition);
+        }
     }
 
     @Override
@@ -172,7 +174,6 @@ public class StepsFragment extends Fragment implements Player.EventListener {
         if (savedInstanceState != null) {
             playbackPosition = savedInstanceState.getLong(PLAYBACK_POSITION);
             playWhenReady = savedInstanceState.getBoolean(PLAYER_STATE);
-            mPlayer.seekTo(playbackPosition);
         }
     }
 
