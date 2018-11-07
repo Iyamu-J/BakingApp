@@ -12,7 +12,6 @@ import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.NestedScrollView;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -147,7 +146,7 @@ public class StepsFragment extends Fragment implements Player.EventListener {
                 descTextView.setText(desc);
 
                 videoUrl = steps.getVideoURL();
-                videoUrlNotEmpty = TextUtils.isEmpty(videoUrl);
+                videoUrlNotEmpty = videoUrl != null && !videoUrl.isEmpty();
                 showVideo(videoUrlNotEmpty);
             }
         }
